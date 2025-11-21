@@ -69,16 +69,19 @@ We start as a pure Vite + React + TypeScript SPA, then wrap it with Tauri.
   _Status:_ ✅ Timeline cards render tags as pill chips, and the sidebar’s “Filter by tag” input filters notes via case-insensitive tag matches before rendering the list.
 
 ### Phase 5 – Simple timeline grouping
-- [ ] **Task 11: Group notes by year and add a simple “zoom” selector**  
-  Zoom select (Years/Months), group notes accordingly with headings, highlight selected note.
+- [x] **Task 11: Group notes by year and add a simple “zoom” selector**  
+  Zoom select (Years/Months), group notes accordingly with headings, highlight selected note.  
+  _Status:_ ✅ Sidebar exposes a zoom selector tied to App state, and TimelineList groups the sorted notes by year or year-month with headings while retaining the selected-note highlight.
 
 ### Phase 6 – Local persistence without backend
-- [ ] **Task 12: Persist notes to localStorage**  
-  Read/write state via `localStorage`, optionally persist selection/filter/zoom.
+- [x] **Task 12: Persist notes to localStorage**  
+  Read/write state via `localStorage`, optionally persist selection/filter/zoom.  
+  _Status:_ ✅ Notes, selected note ID, tag filter, and zoom level hydrate from `localStorage` on load and write back via `useEffect`, so edits survive refreshes.
 
 ### Phase 7 – Add Tauri desktop shell
-- [ ] **Task 13: Integrate Tauri and run the app as a desktop window**  
-  Add Tauri; ensure both `npm run dev` and `npm run tauri dev` work.
+- [x] **Task 13: Integrate Tauri and run the app as a desktop window**  
+  Add Tauri; ensure both `npm run dev` and `npm run tauri dev` work.  
+  _Status:_ ✅ Installed required GTK/WebKit build deps (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, etc.), and `npm run tauri dev` now builds and launches the desktop shell while `npm run dev` continues to serve the SPA.
 
 ### Phase 8 – Attachments (minimal filesystem integration)
 - [ ] **Task 14: Extend the Note model with attachments and build basic UI**  

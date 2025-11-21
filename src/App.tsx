@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import Sidebar from './components/Sidebar'
 import TimelineList from './components/TimelineList'
@@ -34,10 +34,54 @@ const mockNotes: Note[] = [
   },
 ]
 
+const STORAGE_KEYS = {
+  notes: 'timeline-notes',
+  selected: 'timeline-selected-note',
+  tagFilter: 'timeline-tag-filter',
+  zoom: 'timeline-zoom-level',
+} as const
+
+const loadStoredNotes = (): Note[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.notes)
+    if (!raw) return mockNotes
+    const parsed = JSON.parse(raw) as Note[]
+    if (!Array.isArray(parsed)) return mockNotes
+    return parsed
+  } catch {
+    return mockNotes
+  }
+}
+
+const loadStoredString = (
+  key: string,
+  fallback: string | null = null,
+): string | null => {
+  try {
+    const value = localStorage.getItem(key)
+    if (value === null || value === undefined) return fallback
+    return value
+  } catch {
+    return fallback
+  }
+}
+
+const loadStoredZoom = (): 'years' | 'months' => {
+  const value = loadStoredString(STORAGE_KEYS.zoom, 'years')
+  return value === 'months' ? 'months' : 'years'
+}
+
 function App() {
-  const [notes, setNotes] = useState<Note[]>(mockNotes)
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
-  const [tagFilter, setTagFilter] = useState('')
+  const [notes, setNotes] = useState<Note[]>(() => loadStoredNotes())
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(() =>
+    loadStoredString(STORAGE_KEYS.selected),
+  )
+  const [tagFilter, setTagFilter] = useState(
+    loadStoredString(STORAGE_KEYS.tagFilter, '') ?? '',
+  )
+  const [zoomLevel, setZoomLevel] = useState<'years' | 'months'>(() =>
+    loadStoredZoom(),
+  )
 
   const selectedNote =
     notes.find((note) => note.id === selectedNoteId) ?? null
@@ -59,6 +103,26 @@ function App() {
     )
   }
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.notes, JSON.stringify(notes))
+  }, [notes])
+
+  useEffect(() => {
+    if (selectedNoteId) {
+      localStorage.setItem(STORAGE_KEYS.selected, selectedNoteId)
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.selected)
+    }
+  }, [selectedNoteId])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.tagFilter, tagFilter)
+  }, [tagFilter])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.zoom, zoomLevel)
+  }, [zoomLevel])
+
   const createNewNote = () => {
     const now = new Date()
     const newNote: Note = {
@@ -73,13 +137,12 @@ function App() {
     setSelectedNoteId(newNote.id)
   }
 
+  const normalizedFilter = tagFilter.trim().toLowerCase()
   const filteredNotes =
-    tagFilter.trim().length === 0
+    normalizedFilter.length === 0
       ? notes
       : notes.filter((note) =>
-          note.tags.some(
-            (tag) => tag.toLowerCase() === tagFilter.trim().toLowerCase(),
-          ),
+          note.tags.some((tag) => tag.toLowerCase().includes(normalizedFilter)),
         )
 
   return (
@@ -89,6 +152,8 @@ function App() {
           onNewNote={createNewNote}
           tagFilter={tagFilter}
           onTagFilterChange={setTagFilter}
+          zoomLevel={zoomLevel}
+          onZoomLevelChange={setZoomLevel}
         />
       </aside>
       <main className="panel main-panel">
@@ -96,6 +161,7 @@ function App() {
           notes={filteredNotes}
           selectedNoteId={selectedNoteId}
           selectNote={selectNote}
+          zoomLevel={zoomLevel}
         />
       </main>
       <section className="panel details-panel">

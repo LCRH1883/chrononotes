@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import type { Note } from '../types/Note'
 import type { DateType } from '../types/Note'
 
@@ -8,6 +8,16 @@ interface NoteDetailsPanelProps {
 }
 
 function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
+  const [tagsInputValue, setTagsInputValue] = useState('')
+
+  useEffect(() => {
+    if (selectedNote) {
+      setTagsInputValue(selectedNote.tags.join(', '))
+    } else {
+      setTagsInputValue('')
+    }
+  }, [selectedNote?.id])
+
   if (!selectedNote) {
     return (
       <div className="details">
@@ -46,6 +56,7 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
 
   const handleTagsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value
+    setTagsInputValue(raw)
     const tags =
       raw
         .split(',')
@@ -146,7 +157,7 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
           <span>Tags (comma-separated)</span>
           <input
             type="text"
-            value={selectedNote.tags.join(', ')}
+            value={tagsInputValue}
             onChange={handleTagsChange}
             placeholder="e.g. travel, research, draft"
           />
