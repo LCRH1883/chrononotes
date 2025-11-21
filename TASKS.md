@@ -84,16 +84,20 @@ We start as a pure Vite + React + TypeScript SPA, then wrap it with Tauri.
   _Status:_ ✅ Installed required GTK/WebKit build deps (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, etc.), and `npm run tauri dev` now builds and launches the desktop shell while `npm run dev` continues to serve the SPA.
 
 ### Phase 8 – Attachments (minimal filesystem integration)
-- [ ] **Task 14: Extend the Note model with attachments and build basic UI**  
+- [x] **Task 14: Extend the Note model with attachments and build basic UI**  
   Add `Attachment` type, note `attachments: Attachment[]`, placeholder add button.
+  _Status:_ ✅ Added shared `Attachment` type, appended `attachments` to notes with hydration defaults, and exposed an attachments section in the note details panel.
 
-- [ ] **Task 15: Wire up Tauri file dialogs and open attachments**  
+- [x] **Task 15: Wire up Tauri file dialogs and open attachments**  
   Use Tauri dialogs to add attachments and open them via OS.
+  _Status:_ ✅ Installed Tauri dialog/shell plugins and wired the details panel “Add” button to the native file picker (desktop only); attachments are stored on the note and “Open” uses Tauri shell to launch the file path.
 
 ### Phase 9 – Export notes (Markdown, simple)
-- [ ] **Task 16: Add a basic export dialog and Markdown export**  
+- [x] **Task 16: Add a basic export dialog and Markdown export**  
   Export selected notes to Markdown via Tauri save dialog.
+  _Status:_ ✅ Added an Export modal with scope selection (all vs filtered), Markdown composition, and Tauri save dialog + filesystem writes for desktop builds.
 
 ### Phase 10 – Upgrade note body to support lists (optional but recommended)
-- [ ] **Task 17: Replace `<textarea>` with a simple rich-text editor**  
+- [x] **Task 17: Replace `<textarea>` with a simple rich-text editor**  
   Integrate Tiptap/Lexical (or similar) to support lists; persist editor content.
+  _Status:_ ✅ Swapped the textarea for a Lexical-powered rich-text editor with basic formatting controls and list support, storing body content as HTML and updating previews/export handling.

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo:*)",
+      "Bash(rustc:*)",
+      "Bash(echo:*)",
+      "Bash(test:*)",
+      "Bash(export PATH=\"$PATH:/c/Users/lcrha/.cargo/bin\")",
+      "Bash(npm run tauri:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

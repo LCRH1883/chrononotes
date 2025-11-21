@@ -1,32 +1,9 @@
 import type { Note } from '../types/Note'
-
-const getDateSummary = (note: Note): string => {
-  if (note.dateType === 'exact' && note.dateStart) {
-    return `Exact: ${note.dateStart}`
-  }
-
-  if (
-    note.dateType === 'approx_range' &&
-    note.dateStart &&
-    note.rangeMarginDays !== undefined
-  ) {
-    return `Around: ${note.dateStart} (±${note.rangeMarginDays} days)`
-  }
-
-  if (
-    note.dateType === 'broad_period' &&
-    note.dateStart &&
-    note.dateEnd
-  ) {
-    return `Period: ${note.dateStart} – ${note.dateEnd}`
-  }
-
-  if (note.dateStart) {
-    return `Date: ${note.dateStart}`
-  }
-
-  return 'No date'
-}
+import {
+  getBodyPreview,
+  getDateSummary,
+  sortNotesByDate,
+} from '../utils/noteFormatting'
 
 const buildGroups = (
   sortedNotes: Note[],
@@ -68,14 +45,7 @@ function TimelineList({
   selectNote,
   zoomLevel,
 }: TimelineListProps) {
-  const sortedNotes = [...notes].sort((a, b) => {
-    if (a.dateStart && b.dateStart) {
-      return a.dateStart.localeCompare(b.dateStart)
-    }
-    if (a.dateStart) return -1
-    if (b.dateStart) return 1
-    return 0
-  })
+  const sortedNotes = sortNotesByDate(notes)
 
   return (
     <div className="timeline-list">
@@ -112,7 +82,7 @@ function TimelineList({
                     <p className="timeline-card__summary">
                       {getDateSummary(note)}
                     </p>
-                    <p>{note.body}</p>
+                    <p>{getBodyPreview(note.body)}</p>
                     {note.tags.length > 0 && (
                       <div className="timeline-card__tags">
                         {note.tags.map((tag) => (

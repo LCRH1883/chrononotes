@@ -1,5 +1,6 @@
 interface SidebarProps {
   onNewNote: () => void
+  onExport: () => void
   tagFilter: string
   onTagFilterChange: (value: string) => void
   zoomLevel: 'years' | 'months'
@@ -8,6 +9,7 @@ interface SidebarProps {
 
 function Sidebar({
   onNewNote,
+  onExport,
   tagFilter,
   onTagFilterChange,
   zoomLevel,
@@ -21,6 +23,13 @@ function Sidebar({
       </p>
       <button type="button" className="sidebar__button" onClick={onNewNote}>
         + New Note
+      </button>
+      <button
+        type="button"
+        className="sidebar__button sidebar__button--ghost"
+        onClick={onExport}
+      >
+        Export…
       </button>
       <label className="sidebar__filter">
         <span>Filter by tag</span>

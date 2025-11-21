@@ -1,6 +1,8 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
-import type { Note } from '../types/Note'
-import type { DateType } from '../types/Note'
+import { type ChangeEvent } from 'react'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
+import { open as openShell } from '@tauri-apps/plugin-shell'
+import type { Attachment, DateType, Note } from '../types/Note'
+import RichTextEditor from './RichTextEditor'
 
 interface NoteDetailsPanelProps {
   selectedNote: Note | null
@@ -8,15 +10,8 @@ interface NoteDetailsPanelProps {
 }
 
 function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
-  const [tagsInputValue, setTagsInputValue] = useState('')
-
-  useEffect(() => {
-    if (selectedNote) {
-      setTagsInputValue(selectedNote.tags.join(', '))
-    } else {
-      setTagsInputValue('')
-    }
-  }, [selectedNote?.id])
+  const isTauri =
+    typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
   if (!selectedNote) {
     return (
@@ -29,10 +24,6 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
 
   const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
     updateNote(selectedNote.id, { title: event.target.value })
-  }
-
-  const handleBodyChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    updateNote(selectedNote.id, { body: event.target.value })
   }
 
   const handleDateTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -56,13 +47,65 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
 
   const handleTagsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value
-    setTagsInputValue(raw)
     const tags =
       raw
         .split(',')
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0) ?? []
     updateNote(selectedNote.id, { tags })
+  }
+
+  const buildAttachment = (filePath: string): Attachment => {
+    const parts = filePath.split(/[\\/]/)
+    const fileName = parts[parts.length - 1] ?? filePath
+    const id =
+      (typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `att-${Date.now()}-${Math.random().toString(16).slice(2)}`)
+    return { id, fileName, filePath }
+  }
+
+  const handleAddAttachment = async () => {
+    if (!isTauri) {
+      window.alert('Attachment picking is available in the desktop app.')
+      return
+    }
+    try {
+      const selection = await openDialog({
+        multiple: true,
+        directory: false,
+      })
+      if (!selection) return
+      const paths = Array.isArray(selection) ? selection : [selection]
+      const newAttachments = paths
+        .filter((path): path is string => Boolean(path))
+        .map((path) => buildAttachment(path))
+      if (newAttachments.length === 0) return
+      updateNote(selectedNote.id, {
+        attachments: [...selectedNote.attachments, ...newAttachments],
+      })
+    } catch (error) {
+      console.error('Error picking attachments', error)
+      window.alert('Unable to pick attachments right now.')
+    }
+  }
+
+  const handleOpenAttachment = async (filePath: string) => {
+    if (!isTauri) {
+      window.alert('Opening attachments works in the desktop app.')
+      return
+    }
+    try {
+      await openShell(filePath)
+    } catch (error) {
+      console.error('Error opening attachment', error)
+      window.alert('Unable to open this attachment.')
+    }
+  }
+
+  const tagsDisplayValue = selectedNote.tags.join(', ')
+  const handleBodyHtmlChange = (html: string) => {
+    updateNote(selectedNote.id, { body: html })
   }
 
   return (
@@ -78,15 +121,14 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
             placeholder="Note title"
           />
         </label>
-        <label>
+        <div className="details__richtext">
           <span>Body</span>
-          <textarea
+          <RichTextEditor
+            noteId={selectedNote.id}
             value={selectedNote.body}
-            onChange={handleBodyChange}
-            placeholder="Write the body..."
-            rows={10}
+            onChange={handleBodyHtmlChange}
           />
-        </label>
+        </div>
         <label>
           <span>Date type</span>
           <select
@@ -157,11 +199,46 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
           <span>Tags (comma-separated)</span>
           <input
             type="text"
-            value={tagsInputValue}
+            value={tagsDisplayValue}
             onChange={handleTagsChange}
             placeholder="e.g. travel, research, draft"
           />
         </label>
+        <div className="attachments">
+          <div className="attachments__header">
+            <span>Attachments</span>
+            <button
+              type="button"
+              className="attachments__button"
+              onClick={handleAddAttachment}
+            >
+              Add
+            </button>
+          </div>
+          {selectedNote.attachments.length === 0 ? (
+            <p className="attachments__empty">No attachments yet.</p>
+          ) : (
+            <ul className="attachments__list">
+              {selectedNote.attachments.map((attachment) => (
+                <li key={attachment.id} className="attachments__item">
+                  <div className="attachments__item-text">
+                    <strong>{attachment.fileName}</strong>
+                    <span className="attachments__path">
+                      {attachment.filePath}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="attachments__open-button"
+                    onClick={() => void handleOpenAttachment(attachment.filePath)}
+                  >
+                    Open
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   )
