@@ -19,19 +19,23 @@
 
 .sidebar-panel {
   width: 240px;
+  min-width: 220px;
   background: #020617;
   border-right: 1px solid rgba(226, 232, 240, 0.1);
 }
 
 .main-panel {
   flex: 1 1 auto;
+  min-width: 360px;
   background: #111827;
   border-right: 1px solid rgba(226, 232, 240, 0.08);
 }
 
 .details-panel {
-  width: 320px;
+  width: 380px;
+  min-width: 340px;
   background: #0b1120;
+  overflow-y: auto;
 }
 
 .sidebar h1 {
@@ -80,6 +84,7 @@
   flex-direction: column;
   gap: 0.5rem;
   color: #cbd5f5;
+  opacity: 0.6;
 }
 
 .sidebar__filter {
@@ -149,6 +154,7 @@
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  min-height: 120px;
 }
 
 .timeline-card:hover {
