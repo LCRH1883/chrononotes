@@ -1,4 +1,4 @@
-import { type ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { open as openShell } from '@tauri-apps/plugin-shell'
 import type { Attachment, DateType, Note } from '../types/Note'
@@ -12,6 +12,7 @@ interface NoteDetailsPanelProps {
 function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
   const isTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+  const [viewerOpen, setViewerOpen] = useState(false)
 
   if (!selectedNote) {
     return (
@@ -106,6 +107,13 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
   const tagsDisplayValue = selectedNote.tags.join(', ')
   const handleBodyHtmlChange = (html: string) => {
     updateNote(selectedNote.id, { body: html })
+  }
+
+  const handleRemoveAttachment = (attachmentId: string) => {
+    const next = selectedNote.attachments.filter(
+      (att) => att.id !== attachmentId,
+    )
+    updateNote(selectedNote.id, { attachments: next })
   }
 
   return (
@@ -207,38 +215,92 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
         <div className="attachments">
           <div className="attachments__header">
             <span>Attachments</span>
-            <button
-              type="button"
-              className="attachments__button"
-              onClick={handleAddAttachment}
-            >
-              Add
-            </button>
+            <div className="attachments__actions">
+              <button
+                type="button"
+                className="attachments__button attachments__button--ghost"
+                onClick={() => setViewerOpen(true)}
+                disabled={selectedNote.attachments.length === 0}
+              >
+                View
+              </button>
+              <button
+                type="button"
+                className="attachments__button"
+                onClick={handleAddAttachment}
+              >
+                +
+              </button>
+            </div>
           </div>
           {selectedNote.attachments.length === 0 ? (
             <p className="attachments__empty">No attachments yet.</p>
           ) : (
             <ul className="attachments__list">
               {selectedNote.attachments.map((attachment) => (
-                <li key={attachment.id} className="attachments__item">
-                  <div className="attachments__item-text">
-                    <strong>{attachment.fileName}</strong>
-                    <span className="attachments__path">
-                      {attachment.filePath}
-                    </span>
-                  </div>
+                <li key={attachment.id} className="attachments__item attachments__item--clickable">
                   <button
                     type="button"
-                    className="attachments__open-button"
+                    className="attachments__item-link"
                     onClick={() => void handleOpenAttachment(attachment.filePath)}
                   >
-                    Open
+                    {attachment.fileName}
                   </button>
                 </li>
               ))}
             </ul>
           )}
         </div>
+        {viewerOpen && (
+          <div className="modal-overlay" role="dialog" aria-modal="true">
+            <div className="modal attachments-modal">
+              <div className="attachments-modal__header">
+                <h3>Attachments</h3>
+                <button
+                  type="button"
+                  className="modal__close"
+                  onClick={() => setViewerOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+              {selectedNote.attachments.length === 0 ? (
+                <p className="attachments__empty">No attachments to show.</p>
+              ) : (
+                <ul className="attachments__list">
+                  {selectedNote.attachments.map((attachment) => (
+                    <li key={attachment.id} className="attachments__item">
+                      <div className="attachments__item-text">
+                        <strong>{attachment.fileName}</strong>
+                        <span className="attachments__path">
+                          {attachment.filePath}
+                        </span>
+                      </div>
+                      <div className="attachments__item-actions">
+                        <button
+                          type="button"
+                          className="attachments__open-button"
+                          onClick={() =>
+                            void handleOpenAttachment(attachment.filePath)
+                          }
+                        >
+                          Open
+                        </button>
+                        <button
+                          type="button"
+                          className="attachments__remove-button"
+                          onClick={() => handleRemoveAttachment(attachment.id)}
+                        >
+                          Del
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

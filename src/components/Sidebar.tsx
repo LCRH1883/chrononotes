@@ -5,6 +5,9 @@ interface SidebarProps {
   onTagFilterChange: (value: string) => void
   zoomLevel: 'years' | 'months'
   onZoomLevelChange: (value: 'years' | 'months') => void
+  projectLabel: string
+  onChangeProject: () => void
+  onCreateProject: () => void
 }
 
 function Sidebar({
@@ -14,6 +17,9 @@ function Sidebar({
   onTagFilterChange,
   zoomLevel,
   onZoomLevelChange,
+  projectLabel,
+  onChangeProject,
+  onCreateProject,
 }: SidebarProps) {
   return (
     <div className="sidebar">
@@ -21,6 +27,28 @@ function Sidebar({
       <p className="sidebar__tagline">
         Filters and project controls will live here.
       </p>
+      <div className="sidebar__project">
+        <div className="sidebar__project-label">Project</div>
+        <div className="sidebar__project-row">
+          <span title={projectLabel}>{projectLabel}</span>
+          <div className="sidebar__project-actions">
+            <button
+              type="button"
+              className="sidebar__button sidebar__button--ghost"
+              onClick={onChangeProject}
+            >
+              Open…
+            </button>
+            <button
+              type="button"
+              className="sidebar__button sidebar__button--ghost"
+              onClick={onCreateProject}
+            >
+              New…
+            </button>
+          </div>
+        </div>
+      </div>
       <button type="button" className="sidebar__button" onClick={onNewNote}>
         + New Note
       </button>
@@ -52,11 +80,6 @@ function Sidebar({
           <option value="months">Months</option>
         </select>
       </label>
-      <ul className="sidebar__list">
-        <li>All Notes</li>
-        <li>Favorites</li>
-        <li>Recently Viewed</li>
-      </ul>
     </div>
   )
 }

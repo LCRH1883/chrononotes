@@ -1,17 +1,27 @@
-import { useEffect, useState } from 'react'
-import { save as saveDialog } from '@tauri-apps/plugin-dialog'
-import { writeTextFile } from '@tauri-apps/plugin-fs'
+import { useEffect, useRef, useState } from 'react'
+import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog'
+import { createDir, writeTextFile } from '@tauri-apps/plugin-fs'
+import { join } from '@tauri-apps/api/path'
 import './App.css'
 import Sidebar from './components/Sidebar'
 import TimelineList from './components/TimelineList'
 import NoteDetailsPanel from './components/NoteDetailsPanel'
 import ExportDialog from './components/ExportDialog'
 import type { Note } from './types/Note'
+import type { Project } from './types/Project'
 import {
   getDateSummary,
   sortNotesByDate,
   htmlToMarkdown,
 } from './utils/noteFormatting'
+import {
+  deriveProjectId,
+  loadProject,
+  loadStateForProject,
+  persistStateForProject,
+  projectLabelFromPath,
+  saveProject,
+} from './utils/projectStorage'
 
 const mockNotes: Note[] = [
   {
@@ -45,57 +55,22 @@ const mockNotes: Note[] = [
   },
 ]
 
-const STORAGE_KEYS = {
-  notes: 'timeline-notes',
-  selected: 'timeline-selected-note',
-  tagFilter: 'timeline-tag-filter',
-  zoom: 'timeline-zoom-level',
-} as const
-
-const loadStoredNotes = (): Note[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.notes)
-    if (!raw) return mockNotes
-    const parsed = JSON.parse(raw) as Note[]
-    if (!Array.isArray(parsed)) return mockNotes
-    return parsed.map((note) => ({
-      ...note,
-      attachments: note.attachments ?? [],
-    }))
-  } catch {
-    return mockNotes
-  }
-}
-
-const loadStoredString = (
-  key: string,
-  fallback: string | null = null,
-): string | null => {
-  try {
-    const value = localStorage.getItem(key)
-    if (value === null || value === undefined) return fallback
-    return value
-  } catch {
-    return fallback
-  }
-}
-
-const loadStoredZoom = (): 'years' | 'months' => {
-  const value = loadStoredString(STORAGE_KEYS.zoom, 'years')
-  return value === 'months' ? 'months' : 'years'
-}
-
 function App() {
-  const [notes, setNotes] = useState<Note[]>(() => loadStoredNotes())
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(() =>
-    loadStoredString(STORAGE_KEYS.selected),
+  const [project, setProject] = useState<Project>(() => loadProject())
+  const initialState = loadStateForProject(project.id, mockNotes)
+  const [notes, setNotes] = useState<Note[]>(() => initialState.notes)
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(
+    () => initialState.selected ?? null,
   )
-  const [tagFilter, setTagFilter] = useState(
-    loadStoredString(STORAGE_KEYS.tagFilter, '') ?? '',
+  const [tagFilter, setTagFilter] = useState(initialState.tagFilter)
+  const [zoomLevel, setZoomLevel] = useState<'years' | 'months'>(
+    initialState.zoom,
   )
-  const [zoomLevel, setZoomLevel] = useState<'years' | 'months'>(() =>
-    loadStoredZoom(),
-  )
+  const [detailsWidth, setDetailsWidth] = useState(380)
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(380)
+  const shellRef = useRef<HTMLDivElement | null>(null)
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   const [exportScope, setExportScope] = useState<'all' | 'filtered'>('all')
   const isTauri =
@@ -122,24 +97,13 @@ function App() {
   }
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.notes, JSON.stringify(notes))
-  }, [notes])
-
-  useEffect(() => {
-    if (selectedNoteId) {
-      localStorage.setItem(STORAGE_KEYS.selected, selectedNoteId)
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.selected)
-    }
-  }, [selectedNoteId])
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.tagFilter, tagFilter)
-  }, [tagFilter])
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.zoom, zoomLevel)
-  }, [zoomLevel])
+    persistStateForProject(project.id, {
+      notes,
+      selectedNoteId,
+      tagFilter,
+      zoomLevel,
+    })
+  }, [notes, selectedNoteId, tagFilter, zoomLevel, project.id])
 
   const createNewNote = () => {
     const now = new Date()
@@ -171,6 +135,34 @@ function App() {
     setExportScope(hasFilteredSubset ? 'filtered' : 'all')
     setIsExportDialogOpen(true)
   }
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isResizing) return
+      const delta = event.clientX - resizeStartX.current
+      const rawWidth = resizeStartWidth.current - delta
+      const clamped = Math.min(Math.max(rawWidth, 320), 620)
+      setDetailsWidth(clamped)
+    }
+
+    const stopResize = () => {
+      setIsResizing(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    if (isResizing) {
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', stopResize)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', stopResize)
+    }
+  }, [isResizing])
 
   const buildMarkdown = (noteList: Note[]) => {
     const sorted = sortNotesByDate(noteList)
@@ -226,8 +218,67 @@ function App() {
     }
   }
 
+  const switchProject = async () => {
+    if (!isTauri) {
+      window.alert('Project folders can be picked in the desktop app.')
+      return
+    }
+    try {
+      const folder = await openDialog({
+        directory: true,
+        multiple: false,
+      })
+      if (!folder || Array.isArray(folder)) return
+      const id = deriveProjectId(folder)
+      const label = projectLabelFromPath(folder)
+      const nextProject: Project = { id, label, path: folder }
+      saveProject(nextProject)
+      const nextState = loadStateForProject(nextProject.id, mockNotes)
+      setProject(nextProject)
+      setNotes(nextState.notes)
+      setSelectedNoteId(nextState.selected ?? null)
+      setTagFilter(nextState.tagFilter)
+      setZoomLevel(nextState.zoom)
+    } catch (error) {
+      console.error('Error switching project', error)
+      window.alert('Unable to open that project folder.')
+    }
+  }
+
+  const createProject = async () => {
+    if (!isTauri) {
+      window.alert('Creating projects is available in the desktop app.')
+      return
+    }
+    try {
+      const parent = await openDialog({
+        directory: true,
+        multiple: false,
+        title: 'Choose where to create your project folder',
+      })
+      if (!parent || Array.isArray(parent)) return
+      const name = window.prompt('Name for the new project folder:', 'chrononotes-project')
+      if (!name) return
+      const targetPath = await join(parent, name)
+      await createDir(targetPath, { recursive: true })
+      const id = deriveProjectId(targetPath)
+      const label = projectLabelFromPath(targetPath)
+      const nextProject: Project = { id, label, path: targetPath }
+      saveProject(nextProject)
+      const nextState = loadStateForProject(nextProject.id, [])
+      setProject(nextProject)
+      setNotes(nextState.notes)
+      setSelectedNoteId(nextState.selected ?? null)
+      setTagFilter(nextState.tagFilter)
+      setZoomLevel(nextState.zoom)
+    } catch (error) {
+      console.error('Error creating project', error)
+      window.alert('Unable to create that project.')
+    }
+  }
+
   return (
-    <div className="app-shell">
+    <div className="app-shell" ref={shellRef}>
       <aside className="panel sidebar-panel">
         <Sidebar
           onNewNote={createNewNote}
@@ -236,6 +287,9 @@ function App() {
           onTagFilterChange={setTagFilter}
           zoomLevel={zoomLevel}
           onZoomLevelChange={setZoomLevel}
+          projectLabel={project.label}
+          onChangeProject={switchProject}
+          onCreateProject={createProject}
         />
       </aside>
       <main className="panel main-panel">
@@ -246,7 +300,23 @@ function App() {
           zoomLevel={zoomLevel}
         />
       </main>
-      <section className="panel details-panel">
+      <section
+        className="panel details-panel"
+        style={{ width: `${detailsWidth}px` }}
+      >
+        <button
+          type="button"
+          aria-label="Resize details panel"
+          className={`details-panel__handle${
+            isResizing ? ' details-panel__handle--active' : ''
+          }`}
+          onMouseDown={(event) => {
+            resizeStartX.current = event.clientX
+            resizeStartWidth.current = detailsWidth
+            setIsResizing(true)
+            event.preventDefault()
+          }}
+        />
         <NoteDetailsPanel
           selectedNote={selectedNote}
           updateNote={updateNote}

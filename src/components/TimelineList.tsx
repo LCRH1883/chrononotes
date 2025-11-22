@@ -79,9 +79,16 @@ function TimelineList({
                     }}
                   >
                     <h3>{note.title}</h3>
-                    <p className="timeline-card__summary">
-                      {getDateSummary(note)}
-                    </p>
+                    <div className="timeline-card__meta">
+                      <p className="timeline-card__summary">
+                        {getDateSummary(note)}
+                      </p>
+                      {note.attachments.length > 0 && (
+                        <span className="timeline-card__clip">
+                          📎 {note.attachments.length}
+                        </span>
+                      )}
+                    </div>
                     <p>{getBodyPreview(note.body)}</p>
                     {note.tags.length > 0 && (
                       <div className="timeline-card__tags">
