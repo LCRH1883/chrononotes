@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Chrononotes is a Vite + React + TypeScript single-page app. Source code lives in `src/`, with `main.tsx` bootstrapping `App.tsx`, shared visuals in `src/assets/`, and global styles split between `App.css` and `index.css`. Static files and the HTML shell live in `public/` and `index.html`. Tooling is configured via `vite.config.ts`, `tsconfig*.json`, and `eslint.config.js`. Keep new feature folders self-contained under `src/` (components, hooks, and styles together) to preserve the lean structure. Target features are sequenced in [`BUILD_PLAN.md`](BUILD_PLAN.md); align new work with the next open phase whenever possible.
+Chrononotes is a Vite + React + TypeScript single-page app. Source code lives in `src/`, with `main.tsx` bootstrapping `App.tsx`, shared visuals in `src/assets/`, and global styles split between `App.css` and `index.css`. Static files and the HTML shell live in `public/` and `index.html`. Tooling is configured via `vite.config.ts`, `tsconfig*.json`, and `eslint.config.js`. Keep new feature folders self-contained under `src/` (components, hooks, and styles together) to preserve the lean structure. Target features are sequenced in [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md); align new work with the next open phase whenever possible.
 
 ## Build, Test, and Development Commands
 - `npm run dev`: launches the Vite dev server with React Fast Refresh at `http://localhost:5173`.

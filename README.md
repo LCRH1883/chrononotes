@@ -1,27 +1,28 @@
-# Chrononotes – Timeline Notes Playground
+# Chrononotes
 
-Chrononotes is a React + TypeScript + Vite sandbox for prototyping a flexible timeline-based note-taking experience. The project currently ships with a minimal UI shell and grows through incremental phases documented in this repository.
+A desktop-first timeline notebook. Create projects, add dated notes with rich text, tags, and attachments, and double-click timeline cards to open a spacious editor with references to other notes. Side panels collapse to keep focus when you need it.
 
-## Getting Started
+## Install
 
-```bash
-npm install
-npm run dev
-```
+- Download the latest Windows installer (MSI) from Releases and run it.
+- First launch will restore your last project; if none, start with the default project.
 
-Open `http://localhost:5173` to explore the app while iterating on features.
+## Quickstart
 
-## Key Scripts
+1. Create/open a project (left sidebar).
+2. Add notes from the details panel (`+ New Note`).
+3. Double-click any timeline card to open the full editor: edit title/body, dates, tags, attachments, and jump to other notes.
+4. Collapse side panels with “Hide” to focus on writing.
+5. Export (desktop) to Markdown via **Export…** in the sidebar.
 
-- `npm run dev` – Vite dev server with React Fast Refresh.
-- `npm run build` – Type-check (TS project refs) and output production assets to `dist/`.
-- `npm run preview` – Serve the built assets for acceptance testing.
-- `npm run lint` – ESLint (flat config) over the entire repo; must pass before landing changes.
+## Controls & Notes
 
-## Incremental Build Plan
+- Date modes: Exact, Approximate range (± days), Broad period (start/end).
+- Tags: comma-separated in the details panel or modal.
+- Attachments: pick/open files in the desktop app (Tauri).
+- Timeline: grouped by year/month based on the zoom selector; filter by tag via the sidebar.
+- Panels: sidebar and details panels are collapsible; drag the details panel handle to resize.
 
-Follow the phased roadmap in [`BUILD_PLAN.md`](BUILD_PLAN.md) to keep the app shippable after each milestone. Each phase layers one capability (layout, editing, dates, tags, grouping, persistence, desktop shell, attachments, export, polish) so you can visually verify progress in the browser or desktop shell before moving on.
+## Developing / Contributing
 
-## Contributor Guidelines
-
-The contributor workflow, coding conventions, and pull request expectations are described in [`AGENTS.md`](AGENTS.md). Consult it alongside the build plan to understand both *what* to build and *how* to contribute changes.
+See `docs/DEVELOPMENT.md` for dev setup, build/test scripts, and packaging/updater details. The build plan and task history live in `docs/BUILD_PLAN.md` and `docs/TASKS.md`. Internal guidelines remain in `AGENTS.md`.
