@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Chrononotes",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.lcrh.chrononotes",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://127.0.0.1:5173",
@@ -37,6 +37,12 @@
   "plugins": {
     "shell": {
       "open": ".*"
+    },
+    "updater": {
+      "active": true,
+      "endpoints": ["${TAURI_UPDATER_ENDPOINT}"],
+      "dialog": true,
+      "pubkey": "${TAURI_UPDATER_PUBKEY}"
     }
   }
 }
