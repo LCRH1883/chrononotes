@@ -8,6 +8,7 @@ import TimelineList from './components/TimelineList'
 import NoteDetailsPanel from './components/NoteDetailsPanel'
 import ExportDialog from './components/ExportDialog'
 import CreateProjectDialog from './components/CreateProjectDialog'
+import NoteModal from './components/NoteModal'
 import type { Note } from './types/Note'
 import type { Project } from './types/Project'
 import {
@@ -81,6 +82,7 @@ function App() {
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false)
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const isTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
@@ -89,6 +91,11 @@ function App() {
 
   const selectNote = (noteId: string) => {
     setSelectedNoteId(noteId)
+  }
+
+  const openNoteModal = (noteId: string) => {
+    selectNote(noteId)
+    setIsNoteModalOpen(true)
   }
 
   const updateNote = (noteId: string, patch: Partial<Note>) => {
@@ -351,6 +358,7 @@ function App() {
           selectedNoteId={selectedNoteId}
           selectNote={selectNote}
           zoomLevel={zoomLevel}
+          onOpenNote={openNoteModal}
         />
       </main>
       {isDetailsCollapsed ? (
@@ -406,6 +414,15 @@ function App() {
         onConfirm={() => void confirmCreateProject()}
         errorMessage={createError}
         isBusy={isCreatingProject}
+      />
+      <NoteModal
+        isOpen={isNoteModalOpen}
+        note={selectedNote}
+        onClose={() => setIsNoteModalOpen(false)}
+        updateNote={updateNote}
+        onNewNote={createNewNote}
+        otherNotes={notes.filter((note) => note.id !== selectedNoteId)}
+        onSelectNote={(id) => openNoteModal(id)}
       />
     </div>
   )

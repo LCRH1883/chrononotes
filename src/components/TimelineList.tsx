@@ -37,6 +37,7 @@ interface TimelineListProps {
   selectedNoteId: string | null
   selectNote: (noteId: string) => void
   zoomLevel: 'years' | 'months'
+  onOpenNote: (noteId: string) => void
 }
 
 function TimelineList({
@@ -44,6 +45,7 @@ function TimelineList({
   selectedNoteId,
   selectNote,
   zoomLevel,
+  onOpenNote,
 }: TimelineListProps) {
   const sortedNotes = sortNotesByDate(notes)
 
@@ -65,15 +67,16 @@ function TimelineList({
                 return (
                   <article
                     key={note.id}
-                    className={`timeline-card${
-                      isActive ? ' timeline-card--active' : ''
-                    }`}
-                    onClick={() => selectNote(note.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
+                  className={`timeline-card${
+                    isActive ? ' timeline-card--active' : ''
+                  }`}
+                  onClick={() => selectNote(note.id)}
+                  onDoubleClick={() => onOpenNote(note.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
                         selectNote(note.id)
                       }
                     }}

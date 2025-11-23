@@ -792,3 +792,179 @@
   margin: 0;
   color: #fca5a5;
 }
+
+.note-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 30;
+}
+
+.note-modal {
+  width: min(1100px, 100%);
+  max-height: 90vh;
+  background: #0b1120;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.note-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.note-modal__header h3 {
+  margin: 0;
+}
+
+.note-modal__header p {
+  margin: 0.25rem 0 0;
+  color: #94a3b8;
+}
+
+.note-modal__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.note-modal__body {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.note-modal__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.note-modal__main label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #94a3b8;
+}
+
+.note-modal__main input {
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #111a2b;
+  color: #e2e8f0;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+}
+
+.note-modal__richtext {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #94a3b8;
+}
+
+.note-modal__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.note-modal__card {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.note-modal__card h4 {
+  margin: 0;
+}
+
+.note-modal__card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: #94a3b8;
+}
+
+.note-modal__card input,
+.note-modal__card select {
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #111a2b;
+  color: #e2e8f0;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+}
+
+.note-modal__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.note-modal__muted {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.note-modal__references {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.note-modal__reference {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  background: #0b1120;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.note-modal__reference:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.note-modal__reference-title {
+  font-weight: 700;
+}
+
+.note-modal__reference-meta {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 960px) {
+  .note-modal {
+    max-height: 95vh;
+  }
+  .note-modal__body {
+    grid-template-columns: 1fr;
+  }
+}
