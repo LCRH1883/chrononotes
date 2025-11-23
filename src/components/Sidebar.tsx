@@ -1,5 +1,4 @@
 interface SidebarProps {
-  onNewNote: () => void
   onExport: () => void
   tagFilter: string
   onTagFilterChange: (value: string) => void
@@ -8,10 +7,10 @@ interface SidebarProps {
   projectLabel: string
   onChangeProject: () => void
   onCreateProject: () => void
+  onHideSidebar: () => void
 }
 
 function Sidebar({
-  onNewNote,
   onExport,
   tagFilter,
   onTagFilterChange,
@@ -20,17 +19,29 @@ function Sidebar({
   projectLabel,
   onChangeProject,
   onCreateProject,
+  onHideSidebar,
 }: SidebarProps) {
   return (
     <div className="sidebar">
-      <h1>Chrononotes</h1>
+      <div className="sidebar__heading">
+        <h1>Chrononotes</h1>
+        <button
+          type="button"
+          className="sidebar__button sidebar__button--ghost sidebar__button--sm"
+          onClick={onHideSidebar}
+        >
+          Hide
+        </button>
+      </div>
       <p className="sidebar__tagline">
         Filters and project controls will live here.
       </p>
       <div className="sidebar__project">
         <div className="sidebar__project-label">Project</div>
         <div className="sidebar__project-row">
-          <span title={projectLabel}>{projectLabel}</span>
+          <span className="sidebar__project-name" title={projectLabel}>
+            {projectLabel}
+          </span>
           <div className="sidebar__project-actions">
             <button
               type="button"
@@ -49,9 +60,6 @@ function Sidebar({
           </div>
         </div>
       </div>
-      <button type="button" className="sidebar__button" onClick={onNewNote}>
-        + New Note
-      </button>
       <button
         type="button"
         className="sidebar__button sidebar__button--ghost"

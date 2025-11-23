@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog'
-import { createDir, writeTextFile } from '@tauri-apps/plugin-fs'
+import { mkdir, writeTextFile } from '@tauri-apps/plugin-fs'
 import { join } from '@tauri-apps/api/path'
 import './App.css'
 import Sidebar from './components/Sidebar'
 import TimelineList from './components/TimelineList'
 import NoteDetailsPanel from './components/NoteDetailsPanel'
 import ExportDialog from './components/ExportDialog'
+import CreateProjectDialog from './components/CreateProjectDialog'
 import type { Note } from './types/Note'
 import type { Project } from './types/Project'
 import {
@@ -73,6 +74,13 @@ function App() {
   const shellRef = useRef<HTMLDivElement | null>(null)
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   const [exportScope, setExportScope] = useState<'all' | 'filtered'>('all')
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('chrononotes-project')
+  const [newProjectParent, setNewProjectParent] = useState<string | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false)
   const isTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
@@ -245,11 +253,18 @@ function App() {
     }
   }
 
-  const createProject = async () => {
+  const startCreateProject = () => {
     if (!isTauri) {
       window.alert('Creating projects is available in the desktop app.')
       return
     }
+    setNewProjectName('chrononotes-project')
+    setNewProjectParent(null)
+    setCreateError(null)
+    setIsCreateDialogOpen(true)
+  }
+
+  const pickCreateProjectFolder = async () => {
     try {
       const parent = await openDialog({
         directory: true,
@@ -257,10 +272,35 @@ function App() {
         title: 'Choose where to create your project folder',
       })
       if (!parent || Array.isArray(parent)) return
-      const name = window.prompt('Name for the new project folder:', 'chrononotes-project')
-      if (!name) return
-      const targetPath = await join(parent, name)
-      await createDir(targetPath, { recursive: true })
+      setNewProjectParent(parent)
+      setCreateError(null)
+    } catch (error) {
+      console.error('Error picking project folder', error)
+      setCreateError('Unable to open the folder picker.')
+    }
+  }
+
+  const confirmCreateProject = async () => {
+    if (!isTauri) {
+      window.alert('Creating projects is available in the desktop app.')
+      setIsCreateDialogOpen(false)
+      return
+    }
+    if (isCreatingProject) return
+    const trimmedName = newProjectName.trim()
+    if (trimmedName.length === 0) {
+      setCreateError('Enter a project name.')
+      return
+    }
+    if (!newProjectParent) {
+      setCreateError('Choose a parent folder.')
+      return
+    }
+    setIsCreatingProject(true)
+    setCreateError(null)
+    try {
+      const targetPath = await join(newProjectParent, trimmedName)
+      await mkdir(targetPath, { recursive: true })
       const id = deriveProjectId(targetPath)
       const label = projectLabelFromPath(targetPath)
       const nextProject: Project = { id, label, path: targetPath }
@@ -271,27 +311,40 @@ function App() {
       setSelectedNoteId(nextState.selected ?? null)
       setTagFilter(nextState.tagFilter)
       setZoomLevel(nextState.zoom)
+      setIsCreateDialogOpen(false)
     } catch (error) {
       console.error('Error creating project', error)
-      window.alert('Unable to create that project.')
+      setCreateError('Unable to create that project.')
+    } finally {
+      setIsCreatingProject(false)
     }
   }
 
   return (
     <div className="app-shell" ref={shellRef}>
-      <aside className="panel sidebar-panel">
-        <Sidebar
-          onNewNote={createNewNote}
-          onExport={openExportDialog}
-          tagFilter={tagFilter}
-          onTagFilterChange={setTagFilter}
-          zoomLevel={zoomLevel}
-          onZoomLevelChange={setZoomLevel}
-          projectLabel={project.label}
-          onChangeProject={switchProject}
-          onCreateProject={createProject}
-        />
-      </aside>
+      {isSidebarCollapsed ? (
+        <button
+          type="button"
+          className="panel-toggle panel-toggle--left"
+          onClick={() => setIsSidebarCollapsed(false)}
+        >
+          Show sidebar
+        </button>
+      ) : (
+        <aside className="panel sidebar-panel">
+          <Sidebar
+            onExport={openExportDialog}
+            tagFilter={tagFilter}
+            onTagFilterChange={setTagFilter}
+            zoomLevel={zoomLevel}
+            onZoomLevelChange={setZoomLevel}
+            projectLabel={project.label}
+            onChangeProject={switchProject}
+            onCreateProject={startCreateProject}
+            onHideSidebar={() => setIsSidebarCollapsed(true)}
+          />
+        </aside>
+      )}
       <main className="panel main-panel">
         <TimelineList
           notes={filteredNotes}
@@ -300,28 +353,40 @@ function App() {
           zoomLevel={zoomLevel}
         />
       </main>
-      <section
-        className="panel details-panel"
-        style={{ width: `${detailsWidth}px` }}
-      >
+      {isDetailsCollapsed ? (
         <button
           type="button"
-          aria-label="Resize details panel"
-          className={`details-panel__handle${
-            isResizing ? ' details-panel__handle--active' : ''
-          }`}
-          onMouseDown={(event) => {
-            resizeStartX.current = event.clientX
-            resizeStartWidth.current = detailsWidth
-            setIsResizing(true)
-            event.preventDefault()
-          }}
-        />
-        <NoteDetailsPanel
-          selectedNote={selectedNote}
-          updateNote={updateNote}
-        />
-      </section>
+          className="panel-toggle panel-toggle--right"
+          onClick={() => setIsDetailsCollapsed(false)}
+        >
+          Show details
+        </button>
+      ) : (
+        <section
+          className="panel details-panel"
+          style={{ width: `${detailsWidth}px` }}
+        >
+          <button
+            type="button"
+            aria-label="Resize details panel"
+            className={`details-panel__handle${
+              isResizing ? ' details-panel__handle--active' : ''
+            }`}
+            onMouseDown={(event) => {
+              resizeStartX.current = event.clientX
+              resizeStartWidth.current = detailsWidth
+              setIsResizing(true)
+              event.preventDefault()
+            }}
+          />
+          <NoteDetailsPanel
+            selectedNote={selectedNote}
+            updateNote={updateNote}
+            onNewNote={createNewNote}
+            onHideDetails={() => setIsDetailsCollapsed(true)}
+          />
+        </section>
+      )}
       <ExportDialog
         isOpen={isExportDialogOpen}
         scope={exportScope}
@@ -330,6 +395,17 @@ function App() {
         onCancel={() => setIsExportDialogOpen(false)}
         totalCount={notes.length}
         filteredCount={filteredNotes.length}
+      />
+      <CreateProjectDialog
+        isOpen={isCreateDialogOpen}
+        projectName={newProjectName}
+        parentPath={newProjectParent}
+        onProjectNameChange={setNewProjectName}
+        onBrowseFolder={() => void pickCreateProjectFolder()}
+        onCancel={() => setIsCreateDialogOpen(false)}
+        onConfirm={() => void confirmCreateProject()}
+        errorMessage={createError}
+        isBusy={isCreatingProject}
       />
     </div>
   )

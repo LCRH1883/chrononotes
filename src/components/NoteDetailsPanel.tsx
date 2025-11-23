@@ -7,17 +7,46 @@ import RichTextEditor from './RichTextEditor'
 interface NoteDetailsPanelProps {
   selectedNote: Note | null
   updateNote: (id: string, patch: Partial<Note>) => void
+  onNewNote: () => void
+  onHideDetails: () => void
 }
 
-function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
+function NoteDetailsPanel({
+  selectedNote,
+  updateNote,
+  onNewNote,
+  onHideDetails,
+}: NoteDetailsPanelProps) {
   const isTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
   const [viewerOpen, setViewerOpen] = useState(false)
 
+  const header = (
+    <div className="details__header">
+      <h2>{selectedNote ? 'Editing Note' : 'Note Details'}</h2>
+      <div className="details__header-actions">
+        <button
+          type="button"
+          className="details__hide"
+          onClick={onHideDetails}
+        >
+          Hide
+        </button>
+        <button
+          type="button"
+          className="details__new-note"
+          onClick={onNewNote}
+        >
+          + New Note
+        </button>
+      </div>
+    </div>
+  )
+
   if (!selectedNote) {
     return (
       <div className="details">
-        <h2>Note Details</h2>
+        {header}
         <p className="details__placeholder">Select a note to see its contents.</p>
       </div>
     )
@@ -118,7 +147,7 @@ function NoteDetailsPanel({ selectedNote, updateNote }: NoteDetailsPanelProps) {
 
   return (
     <div className="details">
-      <h2>Editing Note</h2>
+      {header}
       <div className="details__form">
         <label>
           <span>Title</span>

@@ -78,7 +78,12 @@ const loadStoredString = (
 export const loadStateForProject = (
   projectId: string,
   fallbackNotes: Note[],
-) => {
+): {
+  notes: Note[]
+  selected: string | null
+  tagFilter: string
+  zoom: 'years' | 'months'
+} => {
   const keys = storageFor(projectId)
   const notes = parseNotes(localStorage.getItem(keys.notes), fallbackNotes)
   const selected = loadStoredString(keys.selected)
