@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { open as openShell } from '@tauri-apps/plugin-shell'
 import type { Attachment, DateType, Note } from '../types/Note'
@@ -20,6 +20,7 @@ function NoteDetailsPanel({
   const isTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
   const [viewerOpen, setViewerOpen] = useState(false)
+  const [tagsInput, setTagsInput] = useState('')
 
   const header = (
     <div className="details__header">
@@ -77,6 +78,7 @@ function NoteDetailsPanel({
 
   const handleTagsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value
+    setTagsInput(raw)
     const tags =
       raw
         .split(',')
@@ -133,7 +135,6 @@ function NoteDetailsPanel({
     }
   }
 
-  const tagsDisplayValue = selectedNote.tags.join(', ')
   const handleBodyHtmlChange = (html: string) => {
     updateNote(selectedNote.id, { body: html })
   }
@@ -144,6 +145,10 @@ function NoteDetailsPanel({
     )
     updateNote(selectedNote.id, { attachments: next })
   }
+
+  useEffect(() => {
+    setTagsInput(selectedNote.tags.join(', '))
+  }, [selectedNote.id])
 
   return (
     <div className="details">
@@ -236,7 +241,7 @@ function NoteDetailsPanel({
           <span>Tags (comma-separated)</span>
           <input
             type="text"
-            value={tagsDisplayValue}
+            value={tagsInput}
             onChange={handleTagsChange}
             placeholder="e.g. travel, research, draft"
           />

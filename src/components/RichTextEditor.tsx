@@ -26,9 +26,8 @@ interface RichTextEditorProps {
 
 const safeHtml = (value: string) => {
   if (!value) return ''
-  const trimmed = value.trim()
-  if (trimmed.startsWith('<')) return trimmed
-  const escaped = trimmed
+  if (value.trim().startsWith('<')) return value
+  const escaped = value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -38,19 +37,24 @@ const safeHtml = (value: string) => {
 function InitialContentPlugin({
   html,
   onHydrated,
+  noteId,
 }: {
   html: string
   onHydrated: () => void
+  noteId: string
 }) {
   const [editor] = useLexicalComposerContext()
+  const hydratedNoteIdRef = useRef<string | null>(null)
 
   useEffect(() => {
+    if (hydratedNoteIdRef.current === noteId) return
     editor.update(() => {
       const root = $getRoot()
       root.clear()
       if (!html) {
         root.append($createParagraphNode())
         onHydrated()
+        hydratedNoteIdRef.current = noteId
         return
       }
       const parser = new DOMParser()
@@ -58,8 +62,9 @@ function InitialContentPlugin({
       const nodes = $generateNodesFromDOM(editor, dom)
       root.append(...nodes)
       onHydrated()
+      hydratedNoteIdRef.current = noteId
     })
-  }, [editor, html, onHydrated])
+  }, [editor, html, noteId, onHydrated])
 
   return null
 }
@@ -80,7 +85,7 @@ function RichTextEditor({ value, onChange, noteId }: RichTextEditorProps) {
   const hydratedRef = useRef(false)
   useEffect(() => {
     hydratedRef.current = false
-  }, [noteId, initialHtml])
+  }, [noteId])
 
   const initialConfig = useMemo(
     () => ({
@@ -125,6 +130,7 @@ function RichTextEditor({ value, onChange, noteId }: RichTextEditorProps) {
             onHydrated={() => {
               hydratedRef.current = true
             }}
+            noteId={noteId}
           />
         </div>
       </div>
