@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { open as openShell } from '@tauri-apps/plugin-shell'
 import RichTextEditor from './RichTextEditor'
@@ -27,6 +27,7 @@ function NoteModal({
   const isTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
   const [isAddingAttachment, setIsAddingAttachment] = useState(false)
+  const [tagsInput, setTagsInput] = useState('')
 
   const sortedOthers = useMemo(
     () => sortNotesByDate(otherNotes),
@@ -150,6 +151,7 @@ function NoteModal({
 
   const handleTagsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value
+    setTagsInput(raw)
     const tags =
       raw
         .split(',')
@@ -162,7 +164,9 @@ function NoteModal({
     updateNote(note.id, { body: html })
   }
 
-  const tagsDisplayValue = note.tags.join(', ')
+  useEffect(() => {
+    setTagsInput(note.tags.join(', '))
+  }, [note.id, note.tags])
 
   return (
     <div className="note-modal-overlay" role="dialog" aria-modal="true">
@@ -284,7 +288,7 @@ function NoteModal({
               <h4>Tags</h4>
               <input
                 type="text"
-                value={tagsDisplayValue}
+                value={tagsInput}
                 onChange={handleTagsChange}
                 placeholder="e.g. travel, research, draft"
               />
